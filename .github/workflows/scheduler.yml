@@ -55,14 +55,6 @@ jobs:
           cache-downloads: false
           log-level: info
 
-      - name: Fetch processed data
-        id: data
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          gh release download data -D data --clobber --pattern youtube-chenyifaer.json
-          sha1sum data/youtube-chenyifaer.json > data/youtube-chenyifaer.json.sha1
-
       - name: Maximize disk space
         run: |
           df -h
@@ -77,6 +69,19 @@ jobs:
           # Remove docker images
           sudo docker image prune --all --force
           df -h
+          USERID=$(id -u)
+          GROUPID=$(id -g)
+          sudo mkdir /workspace
+          sudo chown $USERID:$GROUPID /workspace
+          sudo chmod 777 /workspace
+
+      - name: Fetch processed data
+        id: data
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release download data -D data --clobber --pattern youtube-chenyifaer.json
+          sha1sum data/youtube-chenyifaer.json > data/youtube-chenyifaer.json.sha1
 
       - name: Sync
         env:
@@ -88,12 +93,16 @@ jobs:
         shell: micromamba-shell {0}
         run: |
           pip list
+          cd /workspace
+          cp -r $GITHUB_WORKSPACE .
+          cd ${GITHUB_WORKSPACE##*/}
           python tubesync/youtube.py --database data/youtube-chenyifaer.json
 
       - name: Upload release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          cd /workspace/${GITHUB_WORKSPACE##*/}
           if ! sha1sum -c data/youtube-chenyifaer.json.sha1 &> /dev/null; then
           gh release upload --clobber data data/youtube-chenyifaer.json
           fi
