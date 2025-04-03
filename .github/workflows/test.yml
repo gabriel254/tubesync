@@ -1,0 +1,92 @@
+---
+name: Test
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/test.yml
+
+permissions: write-all
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@main
+
+      - uses: mamba-org/setup-micromamba@main
+        name: Setup micromamba environment
+        with:
+          micromamba-version: latest
+          environment-file: environment.yml
+          environment-name: ci
+          generate-run-shell: true
+          cache-environment: true
+          cache-environment-key: ${{ hashFiles('**/environment.yml') }}
+          cache-downloads: false
+          log-level: info
+      - name: Maximize disk space
+        run: |
+          df -h
+          USERID=$(id -u)
+          GROUPID=$(id -g)
+          sudo mkdir /workspace
+          sudo chown $USERID:$GROUPID /workspace
+          sudo chmod 777 /workspace
+
+      # - name: Maximize disk space
+      #   run: |
+      #     df -h
+      #     # Remove .Net
+      #     sudo rm -rf /usr/share/dotnet
+      #     # Remove Android
+      #     sudo rm -rf /usr/local/lib/android
+      #     # Remove Haskell
+      #     sudo rm -rf /opt/ghc
+      #     # Remove CodeQL
+      #     sudo rm -rf /opt/hostedtoolcache/CodeQL
+      #     # Remove docker images
+      #     sudo docker image prune --all --force
+      #     df -h
+
+      - name: Fetch processed data
+        id: data
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release download data -D data --clobber --pattern youtube-chenyifaer.json
+          sha1sum data/youtube-chenyifaer.json > data/youtube-chenyifaer.json.sha1
+
+      - name: Sync
+        env:
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VIDEOGRAM_TG_SESSION_STRING: ${{ secrets.VIDEOGRAM_TG_SESSION_STRING }}
+          VIDEOGRAM_YT_LANG: zh-CN
+          VIDEOGRAM_YTDLP_PROXY: ${{ secrets.VIDEOGRAM_YTDLP_PROXY }}
+        shell: micromamba-shell {0}
+        run: |
+          pwd
+          cd /workspace
+          cp -r $GITHUB_WORKSPACE .
+          cd ${GITHUB_WORKSPACE##*/}
+          pwd
+          ls -la
+          # python tubesync/youtube.py --database data/test.json
+
+      - name: Upload release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          pwd
+          cd /workspace/${GITHUB_WORKSPACE##*/}
+          pwd
+          # if ! sha1sum -c data/youtube-chenyifaer.json.sha1 &> /dev/null; then
+          # gh release upload --clobber data data/youtube-chenyifaer.json
+          # fi
