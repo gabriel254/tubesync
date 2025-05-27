@@ -42,17 +42,14 @@ jobs:
           tar --extract --strip-components=1 --file /tmp/ffmpeg.tar.gz -C ~/.local/bin/ --wildcards '*/ffmpeg' '*/ffprobe'
           fi
 
-      - uses: mamba-org/setup-micromamba@main
-        name: Setup micromamba environment
+      - name: Install uv
+        uses: astral-sh/setup-uv@main
         with:
-          micromamba-version: latest
-          environment-file: environment.yml
-          environment-name: ci
-          generate-run-shell: true
-          cache-environment: true
-          cache-environment-key: ${{ hashFiles('**/environment.yml') }}
-          cache-downloads: false
-          log-level: info
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+
+      - name: Install the project
+        run: uv sync --locked --no-dev
 
       - name: Maximize disk space
         run: |
@@ -89,13 +86,11 @@ jobs:
           VIDEOGRAM_TG_SESSION_STRING: ${{ secrets.VIDEOGRAM_TG_SESSION_STRING }}
           VIDEOGRAM_YT_LANG: zh-CN
           VIDEOGRAM_YTDLP_PROXY: ${{ secrets.VIDEOGRAM_YTDLP_PROXY }}
-        shell: micromamba-shell {0}
         run: |
-          pip list
           cd /workspace
           cp -r $GITHUB_WORKSPACE .
           cd ${GITHUB_WORKSPACE##*/}
-          python tubesync/youtube.py --database data/youtube-chenyifaer.json
+          uv run tubesync/youtube.py --database data/youtube-chenyifaer.json
 
       - name: Upload release
         env:
@@ -126,4 +121,3 @@ jobs:
           workflow="${workflow#${GITHUB_REPOSITORY}/.github/workflows/}"
           echo "Re-enable $workflow"
           gh api -X PUT "repos/${GITHUB_REPOSITORY}/actions/workflows/${workflow}/enable"
-

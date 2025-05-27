@@ -20,17 +20,15 @@ jobs:
     steps:
       - uses: actions/checkout@main
 
-      - uses: mamba-org/setup-micromamba@main
-        name: Setup micromamba environment
+      - name: Install uv
+        uses: astral-sh/setup-uv@main
         with:
-          micromamba-version: latest
-          environment-file: environment.yml
-          environment-name: ci
-          generate-run-shell: true
-          cache-environment: true
-          cache-environment-key: ${{ hashFiles('**/environment.yml') }}
-          cache-downloads: false
-          log-level: info
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+
+      - name: Install the project
+        run: uv sync --locked --no-dev
+
       - name: Maximize disk space
         run: |
           df -h
@@ -70,7 +68,6 @@ jobs:
           VIDEOGRAM_TG_SESSION_STRING: ${{ secrets.VIDEOGRAM_TG_SESSION_STRING }}
           VIDEOGRAM_YT_LANG: zh-CN
           VIDEOGRAM_YTDLP_PROXY: ${{ secrets.VIDEOGRAM_YTDLP_PROXY }}
-        shell: micromamba-shell {0}
         run: |
           pwd
           cd /workspace

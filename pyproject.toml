@@ -1,23 +1,22 @@
-[tool.poetry]
-authors = ["gabriel254 <166705635+gabriel254@users.noreply.github.com>"]
-description = ""
+[project]
+dependencies = [
+    "asyncer>=0.0.8",
+    "dateparser>=1.2.1",
+    "feedparser>=6.0.11",
+    "loguru>=0.7.3",
+    "pyrotgfork[fast]>=2.2.12",
+    "pysocks>=1.7.1",
+    "python-ffmpeg>=2.0.12",
+    "requests>=2.32.3",
+    "typer>=0.16.0",
+    "yt-dlp>=2025.1.12rc",
+]
 name = "tubesync"
-readme = "README.md"
+requires-python = "~=3.12"
 version = "0.1.0"
 
-[tool.poetry.dependencies]
-dateparser = ">=1.2.0"
-feedparser = ">=6.0.11"
-python = "^3.12"
-videogram = { url = "https://github.com/gabriel254/pods/releases/download/videogram/videogram-0.4.8.tar.gz" }
-
-
-[tool.poetry.group.dev.dependencies]
-ipdb = ">=0.13.13"
-
-[build-system]
-build-backend = "poetry.core.masonry.api"
-requires = ["poetry-core"]
+[dependency-groups]
+dev = ["ipdb>=0.13.13"]
 
 # https://docs.astral.sh/ruff/settings
 [tool.ruff]
